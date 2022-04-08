@@ -13,8 +13,6 @@ output:
 
 ```{r setup, include=FALSE}
 #knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
-#knitr::include_graphics("randomJourneyTimes.gif")
-#knitr::include_graphics("vegVarietyGardenCum.gif")
 ```
 
 ```{r libraries}
@@ -91,11 +89,13 @@ trait_description <- readr::read_csv('https://raw.githubusercontent.com/rfordata
 breed_rank_all <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-02-01/breed_rank.csv')
 ```
 
-```{r, fig.alt=""}
+```{r, fig.alt="A histogram showcasing how the level of affection among different dog breeds affect ratings."}
 breed_trait_graph <- breed_traits %>% 
   ggplot(aes(x = `Affectionate With Family`)) +
   geom_histogram(fill = "lightsteelblue", binwidth = .4) +
-  labs(title = "Affection with Family Among Dog Breeds Affects Ratings") +
+  labs(title = "Affection with Family Among Dog Breeds Affects Ratings 1-5",
+       caption = "Plot created by Vy Lam, data from 'Dog Breeds Github'",
+       x = NULL, y = NULL) +
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank())
@@ -141,6 +141,10 @@ highestJourneyTime %>%
 anim_save("randomJourneyTimes.gif")
 ```
 
+```{r}
+knitr::include_graphics("randomJourneyTimes.gif")
+```
+
 ## Garden data
 
   3. In this exercise, you will create a stacked area plot that reveals itself over time (see the `geom_area()` examples [here](https://ggplot2.tidyverse.org/reference/position_stack.html)). You will look at cumulative harvest of tomato varieties over time. I have filtered the data to the tomatoes and find the *daily* harvest in pounds for each variety. The `complete()` function creates a row for all unique `date`/`variety` combinations. If a variety is not harvested on one of the harvest dates in the dataset, it is filled with a value of 0. 
@@ -179,6 +183,10 @@ animate(vegVariety_gganim, duration = 20)
 anim_save("vegVarietyGardenCum.gif")
 ```
 
+```{r}
+knitr::include_graphics("vegVarietyGardenCum.gif")
+```
+
 
 ## Maps, animation, and movement!
 
@@ -193,32 +201,40 @@ anim_save("vegVarietyGardenCum.gif")
   * Add something of your own! And comment on if you prefer this to the static map and why or why not.
 ```{r, fig.alt= "", eval=FALSE}
 
-states_map <- map_data("state")
+departure_by_station <- mallorca_bike_day7 %>% 
+  group_by(lat, lon)
 
-starbucks_with_2018_pop_est %>% 
-  ggplot(aes()) +
-  geom_map(aes(map_id = state_name, 
-               fill = starbucks_per_10000), 
-           map = states_map) +
-  geom_point(data = Starbucks %>%
-               filter(Country == "US",
-                      !(`State/Province` %in% c("AK", "HI"))),
-             aes(x = Longitude, y = Latitude),
-             color = "goldenrod",
-             size = .2,
-             alpha = .2) +
-  expand_limits(x = states_map$long, y = states_map$lat) + 
-  scale_fill_gradient2() +
-  labs(title = "Starbucks Most Prominent on the West Coast",
-       fill = "Starbucks per 10,000 people",
-       caption = "Viz by @lisalendway") +
+basemap <- get_stamenmap(
+    bbox = c(left = -77.3, bottom = 38.75, right = -76.8, top = 39.15), 
+    maptype = "terrain-background",
+    zoom = 10
+)
+
+ggmap(basemap) +
+  geom_point(data = departure_by_station, 
+             aes(x = lon, y = lat), 
+             alpha=.8, shape = 17) +
+  scale_color_viridis_c() +
   theme_map() +
-  theme(legend.background =  element_blank())
+  theme(legend.background = element_blank())
+
+pal <- colorFactor("viridis",
+                   domain = departure_by_station)
+
+leaflet(data = departure_by_station) %>% 
+  addProviderTiles(providers$Stamen.TonerHybrid) %>% 
+  addCircles(lng = ~lon, 
+             lat = ~lat, , 
+             weight = 10, 
+             opacity = 1) %>% 
+  addLegend(position = "bottomleft", 
+            pal = pal)
 ```
-Comment:
+Comment: If I were to image that I am looking at a working map with clear visuals
+and the route in the data, then I would prefer it over a static map.
 
   
-  5. In this exercise, you get to meet Lisa's sister, Heather! She is a proud Mac grad, currently works as a Data Scientist where she uses R everyday, and for a few years (while still holding a full-time job) she was a pro triathlete. You are going to map one of her races. The data from each discipline of the Ironman 70.3 Pan Am championships, Panama is in a separate file - `panama_swim`, `panama_bike`, and `panama_run`. Create a similar map to the one you created with my cycling data. You will need to make some small changes: 1. combine the files putting them in swim, bike, run order (HINT: `bind_rows()`), 2. make the leading dot a different color depending on the event (for an extra challenge, make it a different image using `geom_image()!), 3. CHALLENGE (optional): color by speed, which you will need to compute on your own from the data. You can read Heather's race report [here](https://heatherlendway.com/2016/02/10/ironman-70-3-pan-american-championships-panama-race-report/). She is also in the Macalester Athletics [Hall of Fame](https://athletics.macalester.edu/honors/hall-of-fame/heather-lendway/184) and still has records at the pool. 
+  5. In this exercise, you get to meet Lisa's sister, Heather! She is a proud Mac grad, currently works as a Data Scientist where she uses R everyday, and for a few years (while still holding a full-time job) she was a pro triathlete. You are going to map one of her races. The data from each discipline of the Ironman 70.3 Pan Am championships, Panama is in a separate file - `panama_swim`, `panama_bike`, and `panama_run`. Create a similar map to the one you created with my cycling data. You will need to make some small changes: 1. combine the files putting them in swim, bike, run order (HINT: `bind_rows()`), 2. make the leading dot a different color depending on the event (for an extra challenge, make it a different image using `geom_image()!), 3. CHALLENGxE (optional): color by speed, which you will need to compute on your own from the data. You can read Heather's race report [here](https://heatherlendway.com/2016/02/10/ironman-70-3-pan-american-championships-panama-race-report/). She is also in the Macalester Athletics [Hall of Fame](https://athletics.macalester.edu/honors/hall-of-fame/heather-lendway/184) and still has records at the pool. 
   
 ```{r}
 
